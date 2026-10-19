@@ -25,7 +25,7 @@
 
   const VOTE_SCREENS=[
     {id:'step4_upsell',screen:'step4',title:'Шаг 4 — допродажа под кнопкой данных',
-     variants:[{id:'A',label:'A — Карточка «Пока машина у нас» + «Дополнительные услуги ›»'},{id:'B',label:'B — Плашка «+ Мойка или химчистка»'},{id:'C',label:'C — Карточка «…ознакомьтесь с разделом «Дополнительные услуги»»'},{id:'D',label:'D — Карточка «Помыть её или убрать салон?»'}]},
+     variants:[{id:'A',label:'A — Карточка «Пока машина у нас» + «Дополнительные услуги ›»'},{id:'B',label:'B — Плашка «+ Мойка или химчистка»'},{id:'C',label:'C — Карточка «…загляните в раздел «Дополнительные услуги»»'},{id:'D',label:'D — Карточка «Помыть её или убрать салон?»'}]},
     {id:'step5_save',screen:'step5',title:'Шаг 5 — текст главной кнопки',
      variants:[{id:'A',label:'A — «Сохранить»'},{id:'B',label:'B — «Сохранить данные»'}]},
     {id:'thanks_upsell',screen:'thanks',title:'«Спасибо, данные сохранены» — как предложить доп. услуги',
@@ -312,7 +312,7 @@
   function renderStep4Variant(v){
     if(v==='A')return `<div data-v="A" class="up-card"><b>Пока машина у нас</b><p>Если оставите её подольше, можно заодно помыть или почистить салон.</p><a class="lnk" data-action="upsell">Дополнительные услуги ›</a></div>`;
     if(v==='B')return `<div data-v="B" class="chip"><span class="pl">+</span><span>Мойка или химчистка,<br>пока машина у нас</span><a class="lnk" data-action="upsell">Посмотреть ›</a></div>`;
-    if(v==='C')return `<div data-v="C" class="up-card"><b>Пока машина у нас</b><p>Если машина может побыть у нас подольше, ознакомьтесь с разделом <a class="lnk" data-action="upsell">Дополнительные услуги ›</a></p></div>`;
+    if(v==='C')return `<div data-v="C" class="up-card"><b>Пока машина у нас</b><p>Если машина может побыть у нас подольше, загляните в раздел <a class="lnk" data-action="upsell">Дополнительные услуги ›</a></p></div>`;
     return `<div data-v="D" class="up-card"><b>Пока машина у нас</b><p>Помыть её или убрать салон? <a class="lnk" data-action="upsell">Посмотреть варианты ›</a></p></div>`;
   }
 
