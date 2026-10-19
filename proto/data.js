@@ -707,3 +707,12 @@ window.SERVICES = {
   }
  ]
 };
+
+// 19.10 18:09: voucher portals (data-driven; new portals/campaigns = add here, the form does not change). Final source: Servaro settings.
+// campaign.services = service ids of the booking form; a campaign is auto-selected when the chosen service matches exactly one campaign.
+window.VOUCHER_PORTALS = [
+ {id:'chilli', name:'Chilli', numberFormat:'5-4', campaigns:[
+  {code:'41417', label:'Химчистка −40%', services:['dry_clean']},
+  {code:'41415', label:'Пакет мойки −31%', services:['wash_in_out']}
+ ]}
+];

@@ -106,5 +106,7 @@ html.framed #device .sheet{max-height:calc(var(--h) - var(--sb) - 40px)}
 /* 19.10 12:11: «акция» hint on step 1 = mockup .optbadge (lime tag), inline next to the price */
 .item .dur .optbadge{margin:0 6px 0 0;padding:1px 6px;vertical-align:1px}
 /* 19.10 17:24: VAT number check (no error style in the mockups: minimal, the app's existing warning colour #ffb547) */
-#vat.invalid,#org.invalid,#regcode.invalid,#city.invalid,#zip.invalid,#street.invalid,#country.invalid{border-color:#ffb547}.vat-err,.req-err{color:#ffb547;margin:6px 0 0}
+#vat.invalid,#org.invalid,#regcode.invalid,#city.invalid,#zip.invalid,#street.invalid,#country.invalid,#voucher-digits.invalid{border-color:#ffb547}.vat-err,.req-err{color:#ffb547;margin:6px 0 0}
 /* 19.10 17:33: required firm fields use the same style (one decision) */
+/* 19.10 18:09: the mockups have no <select>; voucher portal/campaign = native select drawn as the mockup .input row (full width, mockup font) */
+#voucherBlk select.input{width:100%;font:inherit;color:inherit}

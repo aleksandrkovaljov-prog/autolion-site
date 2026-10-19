@@ -74,7 +74,7 @@
     screen:'start',name:'',selectedGroup:null,washItems:[],extras:[],
     selectedDate:null,selectedTime:null,phoneCountryCode:'+372',phoneDigits:'',
     email:'',emailSkipped:false,plate:'',plateSkipped:false,clientName:'',bookingNo:'',
-    invoiceType:'person',foreignFirm:false,firmCountry:'',firmName:'',regCode:'',vat:'',voucherOn:false,voucherNo:'',
+    invoiceType:'person',foreignFirm:false,firmCountry:'',firmName:'',regCode:'',vat:'',voucherOn:false,voucherPortal:'',voucherCampaign:'',voucherDigits:'',voucherPin:'',
     city:'',zip:'',street:'',accountingEmail:'',carMake:'',carModel:'',carYear:'',
     carRadius:'',carVIN:'',previousBookings:[],currentVariant:{},
     votes:loadVotes(),votesComments:loadComments(),
@@ -104,7 +104,7 @@
       email:state.email,emailSkipped:state.emailSkipped,plate:state.plate,plateSkipped:state.plateSkipped,
       clientName:state.clientName,bookingNo:state.bookingNo,invoiceType:state.invoiceType,
       foreignFirm:state.foreignFirm,firmCountry:state.firmCountry,firmName:state.firmName,
-      regCode:state.regCode,vat:state.vat,voucherOn:state.voucherOn,voucherNo:state.voucherNo,city:state.city,zip:state.zip,street:state.street,
+      regCode:state.regCode,vat:state.vat,voucherOn:state.voucherOn,voucherPortal:state.voucherPortal,voucherCampaign:state.voucherCampaign,voucherDigits:state.voucherDigits,voucherPin:state.voucherPin,city:state.city,zip:state.zip,street:state.street,
       accountingEmail:state.accountingEmail,carMake:state.carMake,carModel:state.carModel,
       carYear:state.carYear,carRadius:state.carRadius,carVIN:state.carVIN,
       previousBookings:state.previousBookings,lastFormScreen:state.lastFormScreen,
@@ -424,6 +424,7 @@
     const step4=screen.querySelector('#step4');if(step4)step4.remove();
     const form=screen.querySelector('#step5');
     form.style.display='flex';form.style.flexDirection='column';form.style.flex='1';
+    form.setAttribute('novalidate',''); // checks are done in JS (save5); native validation of hidden firm fields only logged errors
 
     const note=form.querySelector('.note');if(note)note.innerHTML=note.innerHTML.replace('AL-0000',state.bookingNo||generateBookingNo());
     const sumB=form.querySelector('.sum b');if(sumB)sumB.textContent=state.plateSkipped?'Без номера':state.plate||'—';
@@ -464,11 +465,10 @@
     const acc=form.querySelector('#acc');if(acc)acc.setAttribute('value',state.accountingEmail||'');
     const countryInput=form.querySelector('#country');if(countryInput)countryInput.setAttribute('value',state.firmCountry||'');
 
-    // 19.10 17:38: Chilli voucher, common to «Частное лицо» and «Фирма» (mockup .cb checkbox + .field/.input, as «Иностранная фирма»)
-    {const carEl=form.querySelector('.car');if(carEl){const vb=document.createElement('div');vb.className='blk';vb.id='voucherBlk';const on=!!state.voucherOn;
-      vb.innerHTML=`<label class="cb" for="voucher"><input type="checkbox" class="cbx" id="voucher" name="voucher"${on?' checked':''}><span class="box${on?' on':''}" id="vbox"></span>У меня есть ваучер Chilli</label>
-<div class="field" id="voucherField"${on?'':' style="display:none"'}><label class="l" for="voucher-no">Номер ваучера <span class="opt">необязательно</span></label><input class="input" id="voucher-no" name="voucher_number" type="text" autocomplete="off" value="${esc(state.voucherNo||'')}"></div>`;
-      carEl.parentNode.insertBefore(vb,carEl);}}
+    // 19.10 18:09: voucher, common to «Частное лицо» and «Фирма». Mockup parts only: .cb checkbox (as «Иностранная фирма»),
+    // .field + select.input (as «Радиус колёс»), .phone/.cc fixed prefix (as the VAT «EE»), .note hint (as «Сюда отправим счёт.»)
+    {const carEl=form.querySelector('.car');if(carEl){const vb=document.createElement('div');vb.className='blk';vb.id='voucherBlk';
+      vb.innerHTML=voucherHtml();carEl.parentNode.insertBefore(vb,carEl);}}
     const rowlink=form.querySelector('.rowlink');if(rowlink)rowlink.dataset.action='car-expander';
     const carBlk=form.querySelector('.car');
     const carDetails=document.createElement('div');carDetails.id='car-details';carDetails.style.display='none';carDetails.innerHTML=carDetailsHtml();
@@ -778,6 +778,29 @@
     if(bad&&!er){er=document.createElement('p');er.className='note req-err';er.textContent='Заполните поле';f.appendChild(er);}
     if(er)er.style.display=bad?'':'none';
   }
+  function vPortals(){return window.VOUCHER_PORTALS||[];}
+  function vPortal(){const ps=vPortals();return ps.find(x=>x.id===state.voucherPortal)||ps[0]||null;}
+  function chosenServiceIds(){return state.selectedGroup==='wash'?(state.washItems||[]).slice():(state.selectedGroup?[state.selectedGroup]:[]);}
+  function vCampaign(){const p=vPortal();return p?(p.campaigns||[]).find(c=>c.code===state.voucherCampaign)||null:null;}
+  function voucherAuto(){ // portal: first one preselected; campaign: auto when the chosen service matches exactly one campaign
+    const p=vPortal();if(!p)return;if(!state.voucherPortal)state.voucherPortal=p.id;
+    if(!state.voucherCampaign){const ids=chosenServiceIds();const m=(p.campaigns||[]).filter(c=>(c.services||[]).some(x=>ids.includes(x)));if(m.length===1)state.voucherCampaign=m[0].code;}
+  }
+  function voucherHtml(){
+    voucherAuto();
+    const on=!!state.voucherOn,p=vPortal(),c=vCampaign(),ps=vPortals();
+    const pOpts=ps.map(x=>`<option value="${esc(x.id)}"${p&&x.id===p.id?' selected':''}>${esc(x.name)}</option>`).join('');
+    const cOpts=`<option value=""${c?'':' selected'}>Выберите акцию</option>`+(p?(p.campaigns||[]):[]).map(x=>`<option value="${esc(x.code)}"${c&&x.code===c.code?' selected':''}>${esc(x.code)} — ${esc(x.label)}</option>`).join('');
+    return `<label class="cb" for="voucher"><input type="checkbox" class="cbx" id="voucher" name="voucher"${on?' checked':''}><span class="box${on?' on':''}" id="vbox"></span>У меня есть ваучер</label>
+<div id="voucherFields" style="display:${on?'flex':'none'};flex-direction:column;gap:12px">
+<div class="field"><label class="l" for="voucher-portal">Портал</label><select class="input" id="voucher-portal" name="voucher_portal">${pOpts}</select></div>
+<div class="field"><label class="l" for="voucher-campaign">Акция</label><select class="input" id="voucher-campaign" name="voucher_campaign">${cOpts}</select></div>
+<div class="field"><label class="l" for="voucher-digits">Последние 4 цифры</label><div class="phone"><span class="cc" id="voucher-pfx"${c?'':' style="display:none"'}>${c?esc(c.code)+'-':''}</span><input class="input" id="voucher-digits" name="voucher_digits" type="text" inputmode="numeric" autocomplete="off" placeholder="0000" value="${esc(state.voucherDigits||'')}"></div><p class="note vat-err" id="voucher-err" style="display:none">Нужно 4 цифры</p></div>
+<div class="field"><label class="l" for="voucher-pin">PIN</label><input class="input" id="voucher-pin" name="voucher_pin" type="text" inputmode="numeric" autocomplete="off" value="${esc(state.voucherPin||'')}"></div>
+<p class="note" style="margin:0;font-size:14px">(можно предъявить в сервисе)</p>
+</div>`;
+  }
+  function voucherDigitsOk(){const d=state.voucherDigits||'';return !state.voucherOn||d.length===0||d.length===4;}
   function captureStep3(){
     state.phoneDigits=$('#phone-digits')?$('#phone-digits').value.trim():'';
     state.email=state.emailSkipped?'':($('#email-input')?$('#email-input').value.trim():'');
@@ -788,7 +811,8 @@
     const v=s=>{const el=$(s);return el?el.value.trim():'';};
     state.firmName=v('#org');state.regCode=v('#regcode');state.vat=vatFull();
     state.city=v('#city');state.zip=v('#zip');state.street=v('#street');state.accountingEmail=v('#acc');
-    if($('#voucher'))state.voucherOn=$('#voucher').checked;if($('#voucher-no'))state.voucherNo=v('#voucher-no');
+    if($('#voucher'))state.voucherOn=$('#voucher').checked;if($('#voucher-portal'))state.voucherPortal=$('#voucher-portal').value;if($('#voucher-campaign'))state.voucherCampaign=$('#voucher-campaign').value;
+    if($('#voucher-digits'))state.voucherDigits=v('#voucher-digits').replace(/\D/g,'').slice(0,4);if($('#voucher-pin'))state.voucherPin=v('#voucher-pin').replace(/\D/g,'');
     state.carMake=v('#car-make');state.carModel=v('#car-model');state.carYear=v('#car-year');
     state.carRadius=v('#car-radius');state.carVIN=v('#car-vin');
     const c=v('#country');if(c)state.firmCountry=c;else if(state.foreignFirm)state.firmCountry=v('#firm-country-search')||'';
@@ -888,6 +912,7 @@
       }
       if(action==='save5'){
         captureStep5();
+        if(!voucherDigitsOk()){const el=$('#voucher-digits'),er=$('#voucher-err');if(el){el.classList.add('invalid');el.scrollIntoView({behavior:'smooth',block:'center'});el.focus();}if(er)er.style.display='';return;}
         if(state.invoiceType==='firm'){
           const req=['#org','#regcode','#city','#zip','#street'];
           if(state.foreignFirm)req.unshift('#country');
@@ -1047,6 +1072,7 @@
     }catch(err){console.error(err);}
   });
 
+  document.addEventListener('submit',e=>{e.preventDefault();},true); // mockup form uses <button type=submit>: all saving is done by the click handler (no native submit/validation)
   document.addEventListener('input',e=>{
     try{
       const t=e.target;
@@ -1065,7 +1091,8 @@
         }
       }
       if(t.matches&&t.matches('#org, #regcode, #city, #zip, #street, #country')&&t.classList.contains('invalid')&&t.value.trim())reqMark(t,false);
-      if(t.matches&&t.matches('#voucher-no')){state.voucherNo=t.value.trim();saveForm();}
+      if(t.matches&&t.matches('#voucher-digits')){const d=t.value.replace(/\D/g,'').slice(0,4);if(t.value!==d)t.value=d;state.voucherDigits=d;saveForm();if(voucherDigitsOk()){t.classList.remove('invalid');const er=$('#voucher-err');if(er)er.style.display='none';}}
+      if(t.matches&&t.matches('#voucher-pin')){const d=t.value.replace(/\D/g,'');if(t.value!==d)t.value=d;state.voucherPin=d;saveForm();}
       if(t.matches&&t.matches('#vat')){
         const pfx=vatPrefix(),r=vatRest(t.value,pfx);
         if(t.value!==r){t.value=r;}
@@ -1084,9 +1111,11 @@
   document.addEventListener('change',e=>{
     try{
       const t=e.target;
+      if(t.matches&&t.matches('#voucher-portal')){state.voucherPortal=t.value;state.voucherCampaign='';voucherAuto();saveForm();const vb=$('#voucherBlk');if(vb)vb.innerHTML=voucherHtml();return;}
+      if(t.matches&&t.matches('#voucher-campaign')){state.voucherCampaign=t.value;saveForm();const c=vCampaign(),pe=$('#voucher-pfx');if(pe){pe.textContent=c?c.code+'-':'';pe.style.display=c?'':'none';}return;}
       if(t.matches&&t.matches('#voucher')){
         state.voucherOn=t.checked;saveForm();
-        const b=$('#vbox'),f=$('#voucherField');if(b)b.classList.toggle('on',t.checked);if(f)f.style.display=t.checked?'':'none';
+        const b=$('#vbox'),f=$('#voucherFields');if(b)b.classList.toggle('on',t.checked);if(f)f.style.display=t.checked?'flex':'none';
         return;
       }
       if(t.matches&&t.matches('#foreign')){
