@@ -117,7 +117,7 @@ html.framed #device .sheet{max-height:calc(var(--h) - var(--sb) - 40px)}
 #step4 .sum>div>b{min-width:0;white-space:normal;overflow-wrap:anywhere;text-align:right}
 /* 19.10 21:01 trial: the existing step-1 CTA, below sheets (z-index 10/11).
    The transformed desktop #device contains fixed positioning; on phones it is the viewport. */
-.step1-panel.has-service .step1-next-bar{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:16px 18px max(22px,env(safe-area-inset-bottom));background:var(--bg)}
-.step1-panel.has-service .step1-next-bar .button{margin-top:0}
+.step1-panel .step1-next-bar{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:16px 18px max(22px,env(safe-area-inset-bottom));background:var(--bg)}
+.step1-panel .step1-next-bar .button{margin-top:0}
 /* Reserve the pinned bar at the end of the active scroll content, after the footer/caption. */
 .step1-next-space{height:var(--step1-next-height,0px)}

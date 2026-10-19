@@ -265,10 +265,6 @@
     const selected=isAnyServiceSelected();
     panel.classList.toggle('has-service',selected);
     panel.querySelector('[data-action="step1-next"]').classList.toggle('dim',!selected);
-    if(!selected){
-      if(step1NextSpace){step1NextSpace.remove();step1NextSpace=null;}
-      return;
-    }
     if(!step1NextSpace){
       step1NextSpace=document.createElement('div');
       step1NextSpace.className='step1-next-space';
