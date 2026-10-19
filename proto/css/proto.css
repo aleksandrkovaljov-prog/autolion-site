@@ -103,3 +103,5 @@ html.framed #device .sheet{max-height:calc(var(--h) - var(--sb) - 40px)}
 .grp-b .wsub .item:last-child{border:0}
 /* «не входит» in «i» descriptions: light strikethrough + dimmer text */
 .sheet .inc ul.no li{color:#7c8387;text-decoration:line-through;text-decoration-thickness:1px;text-decoration-color:rgba(154,161,165,.55)}
+/* 19.10 12:11: «акция» hint on step 1 = mockup .optbadge (lime tag), inline next to the price */
+.item .dur .optbadge{margin:0 6px 0 0;padding:1px 6px;vertical-align:1px}

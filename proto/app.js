@@ -212,7 +212,7 @@
       return `<div class="item${inc?' dis':''}" data-action="wash-item" data-id="${id}">
         <span class="box${sel?' on':''}"></span>
         <span>${svc.name}${inc?`<span class="why">${inc}</span>`:''}</span>
-        <span class="dur">${svc.price||''}</span>
+        <span class="dur">${inc?'':(id==='wash_in_out'?'<span class="optbadge">акция</span>от '+((String(svc.promo||'').match(/(\d+)\s*€/)||[])[1]||'55')+' €':(svc.price||''))}</span>
         <span class="info" data-action="info" data-id="${id}">i</span>
       </div>`;
     }).join('');
