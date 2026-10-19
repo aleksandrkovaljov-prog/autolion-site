@@ -16,7 +16,7 @@
   const serviceName=id=>getService(id)?getService(id).name:id;
   const groupName=id=>getGroup(id)?getGroup(id).name:id;
 
-  const FORM_KEY='autolion_proto_form_v2';
+  const FORM_KEY=window.PROTO_PRESENT?'autolion_present_form_v2':'autolion_proto_form_v2';
   const VOTE_KEY='autolion_proto_votes_v2';
   const COMMENTS_KEY='autolion_proto_votes_comments_v2';
   const DONE_KEY='autolion_proto_done_v2';
@@ -129,7 +129,10 @@
   }
 
   function getVoteScreenForCurrent(){return VOTE_SCREENS.find(v=>v.screen===state.screen);}
-  function currentVariantId(vs){return state.currentVariant[vs.id]||vs.variants[0].id;}
+  // 19.10 17:24: presentation version (proto/present/): fixed variants, no voting UI
+  const PRESENT=!!window.PROTO_PRESENT;
+  const PRESENT_VARIANTS={step4_upsell:'C',step5_save:'A',thanks_upsell:'A'};
+  function currentVariantId(vs){if(PRESENT)return PRESENT_VARIANTS[vs.id]||vs.variants[0].id;return state.currentVariant[vs.id]||vs.variants[0].id;}
   function hasVotes(id){return (state.votes[id]||[]).length>0;}
   function voteComment(id){return state.votesComments[id]||'';}
   function setVoteComment(id,t){state.votesComments[id]=t;saveVotes();}
@@ -154,10 +157,11 @@
     return `<span class="vsw">${vs.variants.map(v=>`<span data-action="variant" data-variant="${v.id}" class="${v.id===currentVariantId(vs)?'on':''}">${v.id}</span>`).join('')}</span>`;
   }
   function crumbHtml(vs){
+    if(PRESENT)return '<div class="crumb">Главная › Онлайн-запись</div>';
     return `<div class="crumb">Главная › Онлайн-запись <span class="mock">ПРОТОТИП</span>${vs?' '+voteSwitcher(vs):''} <span class="ans" data-action="answers">Ответы ›</span></div>`;
   }
   function votePanelHtml(vs){
-    if(!vs)return '';
+    if(!vs||PRESENT)return '';
     const selected=state.votes[vs.id]||[];
     const opts=vs.variants.map(v=>{
       const label=v.label.replace(/^[A-D] —\s*/,'');
@@ -353,7 +357,7 @@
     const back=document.createElement('span');back.className='back';back.dataset.action='back';back.dataset.back='step3';back.textContent='← Назад';
     grp2.insertAdjacentElement('afterend',back);
 
-    const vp=document.createElement('div');vp.innerHTML=votePanelHtml(vs);screen.appendChild(vp.firstElementChild);
+    const vp=document.createElement('div');vp.innerHTML=votePanelHtml(vs);if(vp.firstElementChild)screen.appendChild(vp.firstElementChild);
     return div.innerHTML;
   }
 
@@ -396,7 +400,7 @@
     const back=document.createElement('span');back.className='back';back.dataset.action='back';back.dataset.back='step5';back.textContent='← Назад';
     newGrp.insertAdjacentElement('afterend',back);
 
-    const vp=document.createElement('div');vp.innerHTML=votePanelHtml(vs);screen.appendChild(vp.firstElementChild);
+    const vp=document.createElement('div');vp.innerHTML=votePanelHtml(vs);if(vp.firstElementChild)screen.appendChild(vp.firstElementChild);
     return div.innerHTML;
   }
 
@@ -438,13 +442,21 @@
       legendReq.style.display='';firmBlk.style.display='';
     }
 
-    const foreign=form.querySelector('#foreign');if(foreign)foreign.checked=state.foreignFirm;
+    const foreign=form.querySelector('#foreign');if(foreign)foreign.toggleAttribute('checked',!!state.foreignFirm); // attribute: the form is serialized via innerHTML
     const fbox=form.querySelector('#fbox');if(fbox)fbox.classList.toggle('on',state.foreignFirm);
     const countryField=form.querySelector('#countryField');if(countryField)countryField.style.display=state.foreignFirm?'':'none';
 
     const org=form.querySelector('#org');if(org){org.value=state.firmName;org.placeholder=state.foreignFirm?'':'… OÜ';}
     const regcode=form.querySelector('#regcode');if(regcode)regcode.value=state.regCode;
-    const vat=form.querySelector('#vat');if(vat)vat.value=state.vat;
+    const vat=form.querySelector('#vat');if(vat){
+      // 19.10 17:24: VAT = country prefix (EE for an Estonian firm) + number; prefix shown in the mockup's .phone/.cc field style
+      const pfx=vatPrefix();const wrap=document.createElement('div');wrap.className='phone';
+      wrap.innerHTML=`<span class="cc" id="vat-pfx"${pfx?'':' style="display:none"'}>${pfx}</span>`;
+      vat.parentNode.insertBefore(wrap,vat);wrap.appendChild(vat);
+      const vr=vatRest(state.vat,pfx);vat.setAttribute('value',vr);if(pfx)state.vat=vr?pfx+vr:'';vat.inputMode=pfx==='EE'?'numeric':'text';vat.placeholder=pfx==='EE'?'123456789':'';
+      const err=document.createElement('p');err.className='note vat-err';err.id='vat-err';err.style.display='none';err.textContent='Номер: EE и 9 цифр';
+      wrap.insertAdjacentElement('afterend',err);
+    }
     const vatLabel=form.querySelector('label[for="vat"]');if(vatLabel)vatLabel.innerHTML=state.foreignFirm?'VAT-номер <span class="opt">необязательно</span>':'НДС-номер <span class="opt">необязательно</span>';
     const city=form.querySelector('#city');if(city)city.value=state.city;
     const zip=form.querySelector('#zip');if(zip){zip.value=state.zip;zip.maxLength=state.foreignFirm?10:5;zip.inputMode=state.foreignFirm?'text':'numeric';}
@@ -463,7 +475,7 @@
     const back=form.querySelector('.actions .back');
     back.dataset.action='back';back.dataset.back='step4';back.textContent='Назад, заполню позже';
 
-    const vp=document.createElement('div');vp.innerHTML=votePanelHtml(vs);screen.appendChild(vp.firstElementChild);
+    const vp=document.createElement('div');vp.innerHTML=votePanelHtml(vs);if(vp.firstElementChild)screen.appendChild(vp.firstElementChild);
     return div.innerHTML;
   }
 
@@ -503,6 +515,7 @@
   function go(screen,opts={}){
     if(!ROUTES.includes(screen))return;
     let target=screen;
+    if(PRESENT&&(target==='start'||target==='end'))target='step1'; // no name/answers screens in the presentation
     const cur=ROUTES.indexOf(state.screen),tgt=ROUTES.indexOf(target);
     if(!opts.allowIncomplete&&target!=='end'&&target!=='start'&&tgt>cur){
       const first=firstIncompleteStep();
@@ -518,7 +531,7 @@
   }
 
   function firstIncompleteStep(){
-    if(!state.name)return 'start';
+    if(!state.name&&!PRESENT)return 'start';
     if(!isAnyServiceSelected())return 'step1';
     if(!state.selectedDate||!state.selectedTime)return 'step2';
     if(!state.phoneDigits||(!state.email&&!state.emailSkipped)||(!state.plate&&!state.plateSkipped))return 'step3';
@@ -526,7 +539,7 @@
   }
   function proceedTo(target,opts){
     const vs=getVoteScreenForCurrent();
-    if(vs&&!hasVotes(vs.id))toast('Можно вернуться и проголосовать позже');
+    if(vs&&!PRESENT&&!hasVotes(vs.id))toast('Можно вернуться и проголосовать позже');
     go(target,opts);
   }
   function backAction(target){
@@ -738,6 +751,20 @@
     document.body.style.overflow='hidden';
   }
 
+  function vatPrefix(){
+    if(!state.foreignFirm)return 'EE';
+    const c=(typeof FOREIGN_COUNTRIES!=='undefined'?FOREIGN_COUNTRIES:[]).find(x=>x[1]===state.firmCountry);
+    if(!c)return '';
+    return c[2]==='GR'?'EL':c[2]; // Greece VAT prefix is EL
+  }
+  function vatRest(raw,pfx){
+    let v=String(raw||'').toUpperCase().replace(/[^0-9A-Z]/g,'');
+    if(pfx)while(v.startsWith(pfx))v=v.slice(pfx.length); // «EE123…», «ee 123 456 789», no double EE
+    if(pfx==='EE')v=v.replace(/\D/g,'');
+    return v;
+  }
+  function vatFull(){const el=$('#vat');const pfx=vatPrefix();const r=el?vatRest(el.value,pfx):vatRest(state.vat,pfx);return r?pfx+r:'';}
+  function vatValid(){const pfx=vatPrefix();const r=vatRest(state.vat,pfx);return !r||pfx!=='EE'||r.length===9;}
   function captureStep3(){
     state.phoneDigits=$('#phone-digits')?$('#phone-digits').value.trim():'';
     state.email=state.emailSkipped?'':($('#email-input')?$('#email-input').value.trim():'');
@@ -746,7 +773,7 @@
   }
   function captureStep5(){
     const v=s=>{const el=$(s);return el?el.value.trim():'';};
-    state.firmName=v('#firm-name');state.regCode=v('#reg-code');state.vat=v('#vat');
+    state.firmName=v('#firm-name');state.regCode=v('#reg-code');state.vat=vatFull();
     state.city=v('#city');state.zip=v('#zip');state.street=v('#street');state.accountingEmail=v('#acc-email');
     state.carMake=v('#car-make');state.carModel=v('#car-model');state.carYear=v('#car-year');
     state.carRadius=v('#car-radius');state.carVIN=v('#car-vin');
@@ -853,11 +880,12 @@
           req.forEach(s=>{const el=$(s);if(el)el.classList.toggle('invalid',!el.value.trim());});
           const empty=req.map(s=>$(s)).filter(x=>x&&!x.value.trim());
           if(empty.length){empty[0].scrollIntoView({behavior:'smooth',block:'center'});empty[0].focus();return;}
+          if(!vatValid()){const el=$('#vat'),er=$('#vat-err');if(el){el.classList.add('invalid');el.scrollIntoView({behavior:'smooth',block:'center'});el.focus();}if(er)er.style.display='';return;}
         }
         saveForm();proceedTo('thanks');return;
       }
       if(action==='to-step5'){proceedTo('step5');return;}
-      if(action==='done'){proceedTo('end');return;}
+      if(action==='done'){if(PRESENT){try{sessionStorage.removeItem(FORM_KEY);}catch(e){}location.replace(location.pathname);return;}proceedTo('end');return;}
       if(action==='another-car'){handleBookAgain();return;}
       if(action==='cal-btn'||action==='map-btn'||action==='reschedule'){toast('В боевой версии');return;}
       if(action==='upsell'){
@@ -987,6 +1015,7 @@
       if(action==='firm-country-select'){
         state.firmCountry=act.dataset.country;saveForm();
         const input=$('#country');if(input){input.value=state.firmCountry;}
+        {const pfx=vatPrefix(),pe=$('#vat-pfx'),ve=$('#vat');if(pe){pe.textContent=pfx;pe.style.display=pfx?'':'none';}if(ve){const r=vatRest(state.vat.replace(/^[A-Z]{2}/,''),pfx);ve.value=r;ve.inputMode=pfx==='EE'?'numeric':'text';ve.placeholder=pfx==='EE'?'123456789':'';state.vat=r?pfx+r:'';saveForm();}}
         const list=$('#clist');if(list)list.innerHTML=firmCountryListHTML(input?input.value:'');
         return;
       }
@@ -1021,6 +1050,12 @@
           list.innerHTML=filtered.map(c=>`<div class="r${state.phoneCountryCode===c[3]?' on':''}" data-action="country-select" data-code="${c[3]}"><span class="flag">${c[0]}</span>${c[1]}<span class="c">${c[3]}</span></div>`).join('');
         }
       }
+      if(t.matches&&t.matches('#vat')){
+        const pfx=vatPrefix(),r=vatRest(t.value,pfx);
+        if(t.value!==r){t.value=r;}
+        state.vat=r?pfx+r:'';saveForm();
+        if(vatValid()){t.classList.remove('invalid');const er=$('#vat-err');if(er)er.style.display='none';}
+      }
       if(t.matches&&t.matches('#country')){
         const list=$('#clist');if(list)list.innerHTML=firmCountryListHTML(t.value);
       }
@@ -1050,6 +1085,7 @@
   window.addEventListener('popstate',()=>{
     try{
       const h=location.hash.replace(/^#(s-)?/,'')||'start'; // '#s-' prefix: mockup sections have id=step4 etc., a plain #step4 made the browser jump
+      if(PRESENT&&(h==='start'||h==='end')){go('step1',{replace:true});return;}
       if(ROUTES.includes(h)){
         clearTimers();closeOverlays();document.body.style.overflow='';
         state.screen=h;saveForm();window.scrollTo(0,0);renderScreen(h);
@@ -1104,7 +1140,7 @@
       return;
     }
     const h=location.hash.replace(/^#(s-)?/,'');
-    if(h)go(h,{replace:true});else go('start',{replace:true});
+    if(h)go(h,{replace:true});else go(PRESENT?'step1':'start',{replace:true});
   }
 
   window.__proto={get state(){return state;},go:go};
