@@ -95,3 +95,11 @@ html.framed #screen::-webkit-scrollbar{display:none}
 html.framed #homebar{display:block;position:absolute;left:50%;bottom:8px;width:136px;height:5px;margin-left:-68px;border-radius:3px;background:rgba(255,255,255,.85);z-index:290;pointer-events:none}
 html.framed #device[data-dev=se] #homebar{display:none}
 html.framed #device .sheet{max-height:calc(var(--h) - var(--sb) - 40px)}
+/* 19.10 11:30: subgroups inside «Мойка и чистка» — header = mockup sheet .g rule, divider = mockup group divider colour */
+.grp-b .g{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 2px}
+.grp-b .wsub{border-top:1px solid #3c4a22;padding-top:2px}
+.grp-b .wsub:first-child{border-top:0}
+.grp-b .wsub:first-child .g{margin-top:4px}
+.grp-b .wsub .item:last-child{border:0}
+/* «не входит» in «i» descriptions: light strikethrough + dimmer text */
+.sheet .inc ul.no li{color:#7c8387;text-decoration:line-through;text-decoration-thickness:1px;text-decoration-color:rgba(154,161,165,.55)}

@@ -194,8 +194,18 @@
     return g?g.id:gid;
   }
 
+  // 19.10 11:30: subgroups inside «Мойка и чистка» (header style = mockup sheet .g)
+  const WASH_SUBGROUPS=[['Комплексные услуги',['wash_in_out','full_pack']],['Мойка',['wash_2stage','wash_touchless']],['Химчистка',['dry_clean']],['Полировка и защита',['polish_light','polish_full','ceramic']]];
   function renderWashItems(){
-    return (S.step1_wash_items||[]).map(id=>{
+    const all=S.step1_wash_items||[], used=new Set();
+    let html='';
+    WASH_SUBGROUPS.forEach(([t,ids])=>{const list=ids.filter(id=>all.includes(id));if(!list.length)return;list.forEach(id=>used.add(id));html+=`<div class="wsub"><div class="g">${t}</div>${renderWashItemList(list)}</div>`;});
+    const rest=all.filter(id=>!used.has(id));
+    if(rest.length)html+=`<div class="wsub">${renderWashItemList(rest)}</div>`;
+    return html;
+  }
+  function renderWashItemList(ids){
+    return ids.map(id=>{
       const svc=getService(id); if(!svc)return '';
       const inc=isIncompatible(id);
       const sel=state.washItems.includes(id)&&!inc;
@@ -214,14 +224,14 @@
       const isWash=g.id==='wash';
       const isOpen=isWash&&state.selectedGroup==='wash';
       const selected=state.selectedGroup===g.id;
-      const chevStyle=selected?' style="transform:rotate(180deg);color:var(--accent)"':'';
+      const chevStyle=isOpen?' style="transform:rotate(180deg);color:var(--accent)"':'';
       const info=isWash?'':`<span class="info" data-action="info" data-group="${g.id}">i</span>`;
       html += `<div class="grp${selected?' open':''}" data-group="${g.id}">
         <div class="grp-h" data-action="toggle-group" data-group="${g.id}">
           <svg class="icon"><use href="#${iconName(g.id)}"/></svg>
           <span class="t">${g.name}<small class="et">${g.et||''}</small></span>
           ${info}
-          <svg class="icon chev"${chevStyle}><use href="#i-down"/></svg>
+          ${isWash?`<svg class="icon chev"${chevStyle}><use href="#i-down"/></svg>`:''}
         </div>`;
       if(isWash&&isOpen){
         html += `<div class="grp-b">${renderWashItems()}
@@ -715,7 +725,7 @@
     let inc='',exc='',note='';
     if(svc.desc){
       inc=svc.desc.includes?`<b>Что входит</b><ul>${svc.desc.includes.map(x=>`<li>${x}</li>`).join('')}</ul>`:'';
-      exc=svc.desc.excludes?`<b>Что не входит</b><ul>${svc.desc.excludes.map(x=>`<li>${x}</li>`).join('')}</ul>`:'';
+      exc=svc.desc.excludes?`<b>Что не входит</b><ul class="no">${svc.desc.excludes.map(x=>`<li>${x}</li>`).join('')}</ul>`:'';
       note=svc.desc.note?`<p class="note">${svc.desc.note}</p>`:'';
     }
     wrapper.innerHTML=`<div class="scrim" data-action="close-info"></div>
@@ -902,7 +912,7 @@
         if(gid==='wash'){
           if(state.selectedGroup==='wash')state.selectedGroup=null;else state.selectedGroup='wash';
         }else{
-          state.selectedGroup=gid;state.washItems=[];
+          state.selectedGroup=state.selectedGroup===gid?null:gid;state.washItems=[];
         }
         saveForm();
         const groups=$('#step1-groups');if(groups)groups.innerHTML=renderGroupsHtml();
