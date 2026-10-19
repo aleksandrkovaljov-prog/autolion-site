@@ -446,8 +446,8 @@
     const fbox=form.querySelector('#fbox');if(fbox)fbox.classList.toggle('on',state.foreignFirm);
     const countryField=form.querySelector('#countryField');if(countryField)countryField.style.display=state.foreignFirm?'':'none';
 
-    const org=form.querySelector('#org');if(org){org.value=state.firmName;org.placeholder=state.foreignFirm?'':'… OÜ';}
-    const regcode=form.querySelector('#regcode');if(regcode)regcode.value=state.regCode;
+    const org=form.querySelector('#org');if(org){org.setAttribute('value',state.firmName||'');org.placeholder=state.foreignFirm?'':'… OÜ';}
+    const regcode=form.querySelector('#regcode');if(regcode)regcode.setAttribute('value',state.regCode||'');
     const vat=form.querySelector('#vat');if(vat){
       // 19.10 17:24: VAT = country prefix (EE for an Estonian firm) + number; prefix shown in the mockup's .phone/.cc field style
       const pfx=vatPrefix();const wrap=document.createElement('div');wrap.className='phone';
@@ -458,11 +458,11 @@
       wrap.insertAdjacentElement('afterend',err);
     }
     const vatLabel=form.querySelector('label[for="vat"]');if(vatLabel)vatLabel.innerHTML=state.foreignFirm?'VAT-номер <span class="opt">необязательно</span>':'НДС-номер <span class="opt">необязательно</span>';
-    const city=form.querySelector('#city');if(city)city.value=state.city;
-    const zip=form.querySelector('#zip');if(zip){zip.value=state.zip;zip.maxLength=state.foreignFirm?10:5;zip.inputMode=state.foreignFirm?'text':'numeric';}
-    const street=form.querySelector('#street');if(street)street.value=state.street;
-    const acc=form.querySelector('#acc');if(acc)acc.value=state.accountingEmail;
-    const countryInput=form.querySelector('#country');if(countryInput)countryInput.value=state.firmCountry;
+    const city=form.querySelector('#city');if(city)city.setAttribute('value',state.city||'');
+    const zip=form.querySelector('#zip');if(zip){zip.setAttribute('value',state.zip||'');zip.maxLength=state.foreignFirm?10:5;zip.inputMode=state.foreignFirm?'text':'numeric';}
+    const street=form.querySelector('#street');if(street)street.setAttribute('value',state.street||'');
+    const acc=form.querySelector('#acc');if(acc)acc.setAttribute('value',state.accountingEmail||'');
+    const countryInput=form.querySelector('#country');if(countryInput)countryInput.setAttribute('value',state.firmCountry||'');
 
     const rowlink=form.querySelector('.rowlink');if(rowlink)rowlink.dataset.action='car-expander';
     const carBlk=form.querySelector('.car');
@@ -765,6 +765,14 @@
   }
   function vatFull(){const el=$('#vat');const pfx=vatPrefix();const r=el?vatRest(el.value,pfx):vatRest(state.vat,pfx);return r?pfx+r:'';}
   function vatValid(){const pfx=vatPrefix();const r=vatRest(state.vat,pfx);return !r||pfx!=='EE'||r.length===9;}
+  // 19.10 17:33: required firm field error = same minimal style as the VAT check (orange border + short caption)
+  function reqMark(el,bad){
+    el.classList.toggle('invalid',bad);
+    const f=el.closest('.field');if(!f)return;
+    let er=f.querySelector(':scope > .req-err');
+    if(bad&&!er){er=document.createElement('p');er.className='note req-err';er.textContent='Заполните поле';f.appendChild(er);}
+    if(er)er.style.display=bad?'':'none';
+  }
   function captureStep3(){
     state.phoneDigits=$('#phone-digits')?$('#phone-digits').value.trim():'';
     state.email=state.emailSkipped?'':($('#email-input')?$('#email-input').value.trim():'');
@@ -773,8 +781,8 @@
   }
   function captureStep5(){
     const v=s=>{const el=$(s);return el?el.value.trim():'';};
-    state.firmName=v('#firm-name');state.regCode=v('#reg-code');state.vat=vatFull();
-    state.city=v('#city');state.zip=v('#zip');state.street=v('#street');state.accountingEmail=v('#acc-email');
+    state.firmName=v('#org');state.regCode=v('#regcode');state.vat=vatFull();
+    state.city=v('#city');state.zip=v('#zip');state.street=v('#street');state.accountingEmail=v('#acc');
     state.carMake=v('#car-make');state.carModel=v('#car-model');state.carYear=v('#car-year');
     state.carRadius=v('#car-radius');state.carVIN=v('#car-vin');
     const c=v('#country');if(c)state.firmCountry=c;else if(state.foreignFirm)state.firmCountry=v('#firm-country-search')||'';
@@ -875,9 +883,9 @@
       if(action==='save5'){
         captureStep5();
         if(state.invoiceType==='firm'){
-          const req=['#firm-name','#reg-code','#city','#zip','#street'];
+          const req=['#org','#regcode','#city','#zip','#street'];
           if(state.foreignFirm)req.unshift('#country');
-          req.forEach(s=>{const el=$(s);if(el)el.classList.toggle('invalid',!el.value.trim());});
+          req.forEach(s=>{const el=$(s);if(el)reqMark(el,!el.value.trim());});
           const empty=req.map(s=>$(s)).filter(x=>x&&!x.value.trim());
           if(empty.length){empty[0].scrollIntoView({behavior:'smooth',block:'center'});empty[0].focus();return;}
           if(!vatValid()){const el=$('#vat'),er=$('#vat-err');if(el){el.classList.add('invalid');el.scrollIntoView({behavior:'smooth',block:'center'});el.focus();}if(er)er.style.display='';return;}
@@ -1010,7 +1018,7 @@
         return;
       }
       if(action==='invoice'){
-        state.invoiceType=act.dataset.invoice;saveForm();renderScreen('step5');return;
+        captureStep5();state.invoiceType=act.dataset.invoice;saveForm();renderScreen('step5');return;
       }
       if(action==='firm-country-select'){
         state.firmCountry=act.dataset.country;saveForm();
@@ -1050,6 +1058,7 @@
           list.innerHTML=filtered.map(c=>`<div class="r${state.phoneCountryCode===c[3]?' on':''}" data-action="country-select" data-code="${c[3]}"><span class="flag">${c[0]}</span>${c[1]}<span class="c">${c[3]}</span></div>`).join('');
         }
       }
+      if(t.matches&&t.matches('#org, #regcode, #city, #zip, #street, #country')&&t.classList.contains('invalid')&&t.value.trim())reqMark(t,false);
       if(t.matches&&t.matches('#vat')){
         const pfx=vatPrefix(),r=vatRest(t.value,pfx);
         if(t.value!==r){t.value=r;}
@@ -1069,7 +1078,7 @@
     try{
       const t=e.target;
       if(t.matches&&t.matches('#foreign')){
-        state.foreignFirm=t.checked;saveForm();renderScreen('step5');
+        captureStep5();state.foreignFirm=t.checked;saveForm();renderScreen('step5');
         return;
       }
       if(t.matches&&t.matches('[data-field]')){
