@@ -74,7 +74,7 @@
     screen:'start',name:'',selectedGroup:null,washItems:[],extras:[],
     selectedDate:null,selectedTime:null,phoneCountryCode:'+372',phoneDigits:'',
     email:'',emailSkipped:false,plate:'',plateSkipped:false,clientName:'',bookingNo:'',
-    invoiceType:'person',foreignFirm:false,firmCountry:'',firmName:'',regCode:'',vat:'',
+    invoiceType:'person',foreignFirm:false,firmCountry:'',firmName:'',regCode:'',vat:'',voucherOn:false,voucherNo:'',
     city:'',zip:'',street:'',accountingEmail:'',carMake:'',carModel:'',carYear:'',
     carRadius:'',carVIN:'',previousBookings:[],currentVariant:{},
     votes:loadVotes(),votesComments:loadComments(),
@@ -104,7 +104,7 @@
       email:state.email,emailSkipped:state.emailSkipped,plate:state.plate,plateSkipped:state.plateSkipped,
       clientName:state.clientName,bookingNo:state.bookingNo,invoiceType:state.invoiceType,
       foreignFirm:state.foreignFirm,firmCountry:state.firmCountry,firmName:state.firmName,
-      regCode:state.regCode,vat:state.vat,city:state.city,zip:state.zip,street:state.street,
+      regCode:state.regCode,vat:state.vat,voucherOn:state.voucherOn,voucherNo:state.voucherNo,city:state.city,zip:state.zip,street:state.street,
       accountingEmail:state.accountingEmail,carMake:state.carMake,carModel:state.carModel,
       carYear:state.carYear,carRadius:state.carRadius,carVIN:state.carVIN,
       previousBookings:state.previousBookings,lastFormScreen:state.lastFormScreen,
@@ -464,6 +464,11 @@
     const acc=form.querySelector('#acc');if(acc)acc.setAttribute('value',state.accountingEmail||'');
     const countryInput=form.querySelector('#country');if(countryInput)countryInput.setAttribute('value',state.firmCountry||'');
 
+    // 19.10 17:38: Chilli voucher, common to «Частное лицо» and «Фирма» (mockup .cb checkbox + .field/.input, as «Иностранная фирма»)
+    {const carEl=form.querySelector('.car');if(carEl){const vb=document.createElement('div');vb.className='blk';vb.id='voucherBlk';const on=!!state.voucherOn;
+      vb.innerHTML=`<label class="cb" for="voucher"><input type="checkbox" class="cbx" id="voucher" name="voucher"${on?' checked':''}><span class="box${on?' on':''}" id="vbox"></span>У меня есть ваучер Chilli</label>
+<div class="field" id="voucherField"${on?'':' style="display:none"'}><label class="l" for="voucher-no">Номер ваучера <span class="opt">необязательно</span></label><input class="input" id="voucher-no" name="voucher_number" type="text" autocomplete="off" value="${esc(state.voucherNo||'')}"></div>`;
+      carEl.parentNode.insertBefore(vb,carEl);}}
     const rowlink=form.querySelector('.rowlink');if(rowlink)rowlink.dataset.action='car-expander';
     const carBlk=form.querySelector('.car');
     const carDetails=document.createElement('div');carDetails.id='car-details';carDetails.style.display='none';carDetails.innerHTML=carDetailsHtml();
@@ -783,6 +788,7 @@
     const v=s=>{const el=$(s);return el?el.value.trim():'';};
     state.firmName=v('#org');state.regCode=v('#regcode');state.vat=vatFull();
     state.city=v('#city');state.zip=v('#zip');state.street=v('#street');state.accountingEmail=v('#acc');
+    if($('#voucher'))state.voucherOn=$('#voucher').checked;if($('#voucher-no'))state.voucherNo=v('#voucher-no');
     state.carMake=v('#car-make');state.carModel=v('#car-model');state.carYear=v('#car-year');
     state.carRadius=v('#car-radius');state.carVIN=v('#car-vin');
     const c=v('#country');if(c)state.firmCountry=c;else if(state.foreignFirm)state.firmCountry=v('#firm-country-search')||'';
@@ -1059,6 +1065,7 @@
         }
       }
       if(t.matches&&t.matches('#org, #regcode, #city, #zip, #street, #country')&&t.classList.contains('invalid')&&t.value.trim())reqMark(t,false);
+      if(t.matches&&t.matches('#voucher-no')){state.voucherNo=t.value.trim();saveForm();}
       if(t.matches&&t.matches('#vat')){
         const pfx=vatPrefix(),r=vatRest(t.value,pfx);
         if(t.value!==r){t.value=r;}
@@ -1077,6 +1084,11 @@
   document.addEventListener('change',e=>{
     try{
       const t=e.target;
+      if(t.matches&&t.matches('#voucher')){
+        state.voucherOn=t.checked;saveForm();
+        const b=$('#vbox'),f=$('#voucherField');if(b)b.classList.toggle('on',t.checked);if(f)f.style.display=t.checked?'':'none';
+        return;
+      }
       if(t.matches&&t.matches('#foreign')){
         captureStep5();state.foreignFirm=t.checked;saveForm();renderScreen('step5');
         return;
