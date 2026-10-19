@@ -60,7 +60,7 @@
   ];
 
   const ROUTES=['start','step1','step2','step3','step4','step5','thanks','end'];
-  const BACK_MAP={step2:'step1',step3:'step2',step4:'step3',step5:'step4',thanks:'step5',end:'start',step1:'start'};
+  const BACK_MAP={step2:'step1',step3:'step2',step4:'step4',step5:'step4',thanks:'step5',end:'start',step1:'start'};
   let timers=[];
   let sheetSelection=new Set();
 
@@ -73,7 +73,7 @@
   let state={
     screen:'start',name:'',selectedGroup:null,washItems:[],extras:[],
     selectedDate:null,selectedTime:null,phoneCountryCode:'+372',phoneDigits:'',
-    email:'',emailSkipped:false,plate:'',plateSkipped:false,clientName:'',bookingNo:'',
+    email:'',emailSkipped:false,plate:'',plateSkipped:false,clientName:'',bookingNo:'',confirmedBookingNo:'',
     invoiceType:'person',foreignFirm:false,firmCountry:'',firmName:'',regCode:'',vat:'',voucherOn:false,voucherPortal:'',voucherCampaign:'',voucherDigits:'',voucherPin:'',
     city:'',zip:'',street:'',accountingEmail:'',carMake:'',carModel:'',carYear:'',
     carRadius:'',carVIN:'',previousBookings:[],currentVariant:{},
@@ -102,7 +102,7 @@
       extras:state.extras,selectedDate:state.selectedDate?state.selectedDate.toISOString():null,
       selectedTime:state.selectedTime,phoneCountryCode:state.phoneCountryCode,phoneDigits:state.phoneDigits,
       email:state.email,emailSkipped:state.emailSkipped,plate:state.plate,plateSkipped:state.plateSkipped,
-      clientName:state.clientName,bookingNo:state.bookingNo,invoiceType:state.invoiceType,
+      clientName:state.clientName,bookingNo:state.bookingNo,confirmedBookingNo:state.confirmedBookingNo,invoiceType:state.invoiceType,
       foreignFirm:state.foreignFirm,firmCountry:state.firmCountry,firmName:state.firmName,
       regCode:state.regCode,vat:state.vat,voucherOn:state.voucherOn,voucherPortal:state.voucherPortal,voucherCampaign:state.voucherCampaign,voucherDigits:state.voucherDigits,voucherPin:state.voucherPin,city:state.city,zip:state.zip,street:state.street,
       accountingEmail:state.accountingEmail,carMake:state.carMake,carModel:state.carModel,
@@ -320,7 +320,17 @@
     return `<div data-v="D" class="up-card"><b>Пока машина у нас</b><p>Помыть её или убрать салон? <a class="lnk" data-action="upsell">Посмотреть варианты ›</a></p></div>`;
   }
 
+  function ensureBookingNo(){
+    if(!state.bookingNo||state.bookingNo==='AL-0000'){
+      const oldBookingNo=state.bookingNo;
+      state.bookingNo=generateBookingNo();
+      if(oldBookingNo==='AL-0000'&&state.confirmedBookingNo===oldBookingNo)state.confirmedBookingNo=state.bookingNo;
+      saveForm();
+    }
+  }
+
   function renderStep4(){
+    ensureBookingNo();
     const vs=getVoteScreenForCurrent();
     const div=document.createElement('div');div.innerHTML=window.MOCKUP_TPL['upsell/screen'];
     const screen=div.firstElementChild;
@@ -329,9 +339,13 @@
     const step4=screen.querySelector('#step4');
     const variant=currentVariantId(vs);
     const isCD=variant==='C'||variant==='D';
-    const sumHTML=isCD?`<div><span>Номер записи</span><b>${state.bookingNo||generateBookingNo()}</b></div><div><span>Когда</span><b>${serviceSummary()} · ${formatDateShort(state.selectedDate)} · ${state.selectedTime||''}</b></div>`
-      :`<div><span>Номер записи</span><b>${state.bookingNo||generateBookingNo()}</b></div><div><span>Услуга</span><b>${serviceSummary()}</b></div><div><span>Когда</span><b>${formatDateLong(state.selectedDate)} · ${state.selectedTime||''}</b></div><div><span>Адрес</span><b>Vaari 4 (Pärnu mnt 158G)</b></div>`;
-    step4.querySelector('.sum').innerHTML=sumHTML;
+    const title=step4.querySelector('.ok h3');
+    const titleBlock=document.createElement('div');
+    title.replaceWith(titleBlock);titleBlock.appendChild(title);
+    const bookingNo=document.createElement('p');bookingNo.className='note';bookingNo.textContent=`№ ${state.bookingNo}`;
+    titleBlock.appendChild(bookingNo);
+    const service=state.selectedGroup==='wash'?state.washItems.map(serviceName).join(', '):serviceSummary();
+    step4.querySelector('.sum').innerHTML=`<div><span>Услуга</span><b>${esc(service)}</b></div><div><span>Когда</span><b>${formatDateShort(state.selectedDate,true)} · ${esc(state.selectedTime||'')}</b></div>${isCD?'':'<div><span>Адрес</span><b>Vaari 4 (Pärnu mnt 158G)</b></div>'}`;
     const sentSpan=step4.querySelector('.sent span');
     if(isCD)sentSpan.innerHTML=`Подтверждение отправлено на <b>${esc(state.email||'e-mail')}</b>`;
     else if(state.emailSkipped||!state.email)sentSpan.innerHTML=`Подтверждение придёт по SMS на <b>${esc(state.phoneCountryCode+' '+state.phoneDigits)}</b>`;
@@ -354,8 +368,6 @@
 
     const grp2=document.createElement('div');grp2.className='grp2';grp2.innerHTML=`<div class="button" data-action="another-car">Записать ещё одну машину</div><div class="button" data-action="done">Готово</div>`;
     priceLink.insertAdjacentElement('afterend',grp2);
-    const back=document.createElement('span');back.className='back';back.dataset.action='back';back.dataset.back='step3';back.textContent='← Назад';
-    grp2.insertAdjacentElement('afterend',back);
 
     const vp=document.createElement('div');vp.innerHTML=votePanelHtml(vs);if(vp.firstElementChild)screen.appendChild(vp.firstElementChild);
     return div.innerHTML;
@@ -376,6 +388,7 @@
   }
 
   function renderThanks(){
+    ensureBookingNo();
     const vs=getVoteScreenForCurrent();
     const div=document.createElement('div');div.innerHTML=window.MOCKUP_TPL['upsell/screen'];
     const screen=div.firstElementChild;
@@ -417,6 +430,7 @@
   }
 
   function renderStep5(){
+    ensureBookingNo();
     const vs=getVoteScreenForCurrent();
     const div=document.createElement('div');div.innerHTML=window.MOCKUP_TPL['steps45/screen'];
     const screen=div.firstElementChild;
@@ -517,15 +531,18 @@
     afterRender(screen);
   }
 
+  function isBookingConfirmed(){return !!state.confirmedBookingNo&&state.confirmedBookingNo===state.bookingNo;}
+
   function go(screen,opts={}){
     if(!ROUTES.includes(screen))return;
     let target=screen;
     if(PRESENT&&(target==='start'||target==='end'))target='step1'; // no name/answers screens in the presentation
     const cur=ROUTES.indexOf(state.screen),tgt=ROUTES.indexOf(target);
-    if(!opts.allowIncomplete&&target!=='end'&&target!=='start'&&tgt>cur){
+    if(!isBookingConfirmed()&&!opts.allowIncomplete&&target!=='end'&&target!=='start'&&(tgt>cur||target==='step4')){
       const first=firstIncompleteStep();
       if(first&&ROUTES.indexOf(first)<tgt)target=first;
     }
+    if(isBookingConfirmed()&&['start','step1','step2','step3'].includes(target))target='step4';
     if(target==='end'&&state.screen!=='end'&&cur<ROUTES.indexOf('end'))state.lastFormScreen=state.screen;
     if(opts.replace)history.replaceState({screen:target},'', '#s-'+target);
     else history.pushState({screen:target},'', '#s-'+target);
@@ -554,7 +571,7 @@
     }catch(e){go(fallback,{replace:true});}
   }
 
-  function formatDateShort(d){if(!d)return 'дата';return `${W[d.getDay()]}, ${d.getDate()}.${String(d.getMonth()+1).padStart(2,'0')}`;}
+  function formatDateShort(d,padDay=false){if(!d)return 'дата';return `${W[d.getDay()]}, ${padDay?String(d.getDate()).padStart(2,'0'):d.getDate()}.${String(d.getMonth()+1).padStart(2,'0')}`;}
   function formatDateLong(d){if(!d)return 'дата';return `${d.getDate()}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;}
 
   function getBaseDate(){
@@ -825,6 +842,7 @@
   }
   function handleBookAgain(){
     state.previousBookings.push({plate:state.plate||'Без номера',date:state.selectedDate,time:state.selectedTime});
+    state.confirmedBookingNo='';
     state.selectedGroup=null;state.washItems=[];state.selectedDate=null;state.selectedTime=null;
     state.plate='';state.plateSkipped=false;state.extras=[];state.bookingNo='';saveForm();go('step1');
   }
@@ -908,7 +926,8 @@
         if(!state.phoneDigits){$('#phone-digits').classList.add('invalid');return;}
         if(!state.emailSkipped&&!state.email){$('#email-input').classList.add('invalid');return;}
         if(!state.plateSkipped&&!state.plate){$('#plate-input').classList.add('invalid');return;}
-        state.bookingNo=state.bookingNo||generateBookingNo();saveForm();proceedTo('step4');return;
+        state.bookingNo=state.bookingNo||generateBookingNo();
+        state.confirmedBookingNo=state.bookingNo;saveForm();proceedTo('step4');return;
       }
       if(action==='save5'){
         captureStep5();
@@ -1132,16 +1151,20 @@
 
   window.addEventListener('resize',()=>{try{if(document.querySelector('.calzone'))fitCalZone();}catch(e){console.error(e);}});
 
-  window.addEventListener('popstate',()=>{
+  function handleHistoryChange(event={}){
     try{
       const h=location.hash.replace(/^#(s-)?/,'')||'start'; // '#s-' prefix: mockup sections have id=step4 etc., a plain #step4 made the browser jump
-      if(PRESENT&&(h==='start'||h==='end')){go('step1',{replace:true});return;}
-      if(ROUTES.includes(h)){
-        clearTimers();closeOverlays();document.body.style.overflow='';
-        state.screen=h;saveForm();window.scrollTo(0,0);renderScreen(h);
+      if(h===state.screen&&event.type!=='popstate')return; // ignore a hashchange following the handled popstate
+      if(isBookingConfirmed()&&['start','step1','step2','step3'].includes(h)){
+        go('step4',{replace:true}); // block earlier steps without discarding post-confirmation Forward entries
+        return;
       }
+      if(PRESENT&&(h==='start'||h==='end')){go('step1',{replace:true});return;}
+      if(ROUTES.includes(h))go(h,{replace:true,allowIncomplete:h!=='step4'});
     }catch(e){console.error(e);}
-  });
+  }
+  window.addEventListener('popstate',handleHistoryChange);
+  window.addEventListener('hashchange',handleHistoryChange);
 
   function fillDemo(){
     state.name='Test';state.selectedGroup='tire';state.washItems=[];
@@ -1150,7 +1173,7 @@
     state.phoneCountryCode='+372';state.phoneDigits='5557 6777';
     state.email='name@example.com';state.emailSkipped=false;
     state.plate='123 ABC';state.plateSkipped=false;state.clientName='Test';
-    state.bookingNo='AL-0000';state.extras=[];
+    ensureBookingNo();state.extras=[];
     state.invoiceType='person';state.foreignFirm=false;state.firmCountry='';state.firmName='';
     saveForm();
   }

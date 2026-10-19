@@ -112,3 +112,6 @@ html.framed #device .sheet{max-height:calc(var(--h) - var(--sb) - 40px)}
 #voucherBlk select.input{width:100%;font:inherit;color:inherit}
 /* 19.10 18:26: voucher number = campaign code box, plain hyphen between the boxes, 4-digit box */
 #voucherBlk .vdash{align-self:center}
+/* Confirmation summary: keep labels intact and let long values wrap at the right edge. */
+#step4 .sum>div>span:first-child{flex-shrink:0;white-space:nowrap}
+#step4 .sum>div>b{min-width:0;white-space:normal;overflow-wrap:anywhere;text-align:right}
