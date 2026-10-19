@@ -1,0 +1,13 @@
+/* VERBATIM copy of the sheet block from mockups/booking-form/v5-upsell/upsell.html (do not edit) */
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:10}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:11;max-width:402px;margin:0 auto;background:#171b1e;border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:8px 18px 18px;max-height:88vh;display:flex;flex-direction:column;gap:12px}
+.grab{width:40px;height:5px;border-radius:3px;background:#4a5155;margin:2px auto 0}
+.sheet h3{margin:0;font-size:20px}
+.sheet .sub{margin:-4px 0 0;font-size:15px;color:var(--muted);line-height:1.4}
+.sheet .lst{overflow:auto;flex:1;min-height:0;-webkit-mask-image:linear-gradient(#000 85%,transparent);mask-image:linear-gradient(#000 85%,transparent);border-top:1px solid #2c3236}
+.sheet .g{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 2px}
+.sheet .it{display:flex;align-items:center;gap:12px;min-height:48px;border-bottom:1px solid #262b2e;font-size:17px}
+.sheet .it .box{width:24px;height:24px;border-radius:5px}
+.sheet .button{margin:0}
+.sheet .back{margin:0}
