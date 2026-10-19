@@ -795,7 +795,7 @@
 <div id="voucherFields" style="display:${on?'flex':'none'};flex-direction:column;gap:12px">
 <div class="field"><label class="l" for="voucher-portal">Портал</label><select class="input" id="voucher-portal" name="voucher_portal">${pOpts}</select></div>
 <div class="field"><label class="l" for="voucher-campaign">Акция</label><select class="input" id="voucher-campaign" name="voucher_campaign">${cOpts}</select></div>
-<div class="field"><label class="l" for="voucher-digits">Последние 4 цифры</label><div class="phone"><span class="cc" id="voucher-pfx"${c?'':' style="display:none"'}>${c?esc(c.code)+'-':''}</span><input class="input" id="voucher-digits" name="voucher_digits" type="text" inputmode="numeric" autocomplete="off" placeholder="0000" value="${esc(state.voucherDigits||'')}"></div><p class="note vat-err" id="voucher-err" style="display:none">Нужно 4 цифры</p></div>
+<div class="field"><label class="l" for="voucher-digits">Последние 4 цифры</label><div class="phone"><span class="cc" id="voucher-pfx"${c?'':' style="display:none"'}>${c?esc(c.code):''}</span><span class="vdash" id="voucher-dash"${c?'':' style="display:none"'}>-</span><input class="input" id="voucher-digits" name="voucher_digits" type="text" inputmode="numeric" autocomplete="off" placeholder="0000" value="${esc(state.voucherDigits||'')}"></div><p class="note vat-err" id="voucher-err" style="display:none">Нужно 4 цифры</p></div>
 <div class="field"><label class="l" for="voucher-pin">PIN</label><input class="input" id="voucher-pin" name="voucher_pin" type="text" inputmode="numeric" autocomplete="off" value="${esc(state.voucherPin||'')}"></div>
 <p class="note" style="margin:0;font-size:14px">(можно предъявить в сервисе)</p>
 </div>`;
@@ -1112,7 +1112,7 @@
     try{
       const t=e.target;
       if(t.matches&&t.matches('#voucher-portal')){state.voucherPortal=t.value;state.voucherCampaign='';voucherAuto();saveForm();const vb=$('#voucherBlk');if(vb)vb.innerHTML=voucherHtml();return;}
-      if(t.matches&&t.matches('#voucher-campaign')){state.voucherCampaign=t.value;saveForm();const c=vCampaign(),pe=$('#voucher-pfx');if(pe){pe.textContent=c?c.code+'-':'';pe.style.display=c?'':'none';}return;}
+      if(t.matches&&t.matches('#voucher-campaign')){state.voucherCampaign=t.value;saveForm();const c=vCampaign(),pe=$('#voucher-pfx');if(pe){pe.textContent=c?c.code:'';pe.style.display=c?'':'none';}const de=$('#voucher-dash');if(de)de.style.display=c?'':'none';return;}
       if(t.matches&&t.matches('#voucher')){
         state.voucherOn=t.checked;saveForm();
         const b=$('#vbox'),f=$('#voucherFields');if(b)b.classList.toggle('on',t.checked);if(f)f.style.display=t.checked?'flex':'none';

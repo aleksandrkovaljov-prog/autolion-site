@@ -110,3 +110,5 @@ html.framed #device .sheet{max-height:calc(var(--h) - var(--sb) - 40px)}
 /* 19.10 17:33: required firm fields use the same style (one decision) */
 /* 19.10 18:09: the mockups have no <select>; voucher portal/campaign = native select drawn as the mockup .input row (full width, mockup font) */
 #voucherBlk select.input{width:100%;font:inherit;color:inherit}
+/* 19.10 18:26: voucher number = campaign code box, plain hyphen between the boxes, 4-digit box */
+#voucherBlk .vdash{align-self:center}
